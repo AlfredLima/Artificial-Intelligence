@@ -7,79 +7,68 @@
 #include<bits/stdc++.h>
 using namespace std;
 
-int load[2][3][5] = 
-{
-  { {-1,0,1,0,0} , {0,-1,2,0,0} , {-1,-1,3,0,0} } ,
-  { {0,0,1,-1,0} , {0,0,2,0,-1} , {0,0,3,-1,-1} }
-};
 
-int download[10][5] =
+// Distribuição
+// ||Canibais E||Missionarios E||Canibais B||Missionarios B||Canibais D||Missionarios D||Lado do rio||
+
+int load[2][5][6] = 
 {
-  {0,0,0,0,0}   , // 0 
-  {0,0,3,1,0}   , // 1
-  {0,0,2,0,1}   , // 2
-  {0,0,1,1,1}   , // 3
-  {0,0,0,0,0}   , // 4
-  {1,0,-5,0,0}  , // 5
-  {0,1,-6,0,0}  , // 6
-  {1,1,-7,0,0}  , // 7
-  {0,0,0,0,0}   , // 8
-  {0,0,0,0,0}     // 9
+  { {-1,0,1,0,0,0} , {-2,0,2,0,0,0} , {0,-1,0,1,0,0} , {0,-2,0,2,0,0} , {-1,-1,1,1,0,0} } ,
+  { {0,0,1,0,-1,0} , {0,0,2,0,-2,0} , {0,0,0,1,0,-1} , {0,0,0,2,0,-2} , {0,0,1,1,-1,-1} }
 };
 
 map< string , string > states;
 
-bool valid( string s )
+bool valid( vector<int> &state )
 {
-  vector<int> qt(5);
+  for( auto s : state )
+    if( s < 0 ) return false;
 
-  for (int i = 0; i < 5; i++)
-    qt[i] = s[i] - '0';
+  if( state[0] > state[1] ) return false;
 
-  for (int i = 0; i < 2; i++)
-    if( qt[3*i] && qt[3*i+1] > qt[3*i] )
-      return false;
-
-  for (int i = 0; i < 5; i++)
-    if( qt[i] < 0 )
-      false;
-
+  if( state[4] > state[5] ) return false;
   return true;
 }
 
 string toString( vector<int> &values )
 {
-  string ans = "";
-  
+  string ans = ""; 
   for( auto v : values )
     ans += (v+'0');
-
   return ans;
 }
 
 vector<string> generate_candidates( string &s )
 {
   vector<string> candidates;
-  vector<int> qt(5);
-  vector<int> next_state(5);
-  for (int i = 0; i < 5; i++)
+  vector<int> qt(7);
+  vector<int> next_state(7);
+  for (int i = 0; i < 7; i++)
     qt[i] = s[i] - '0';
 
-  if( qt[2] == 0 || qt[2] == 4 )
+  if( qt[2] + qt[3] == 0 )
   {
     // Carrega o barco
-    for(int j = 0; j < 3 ; ++j)
-    {
-      for (int i = 0; i < 5 ; ++i)
-        next_state[i] = qt[i] + load[ qt[2]>>2 ][ j ][ i ];
-      candidates.push_back( toString(next_state) );
+    next_state[ 6 ] = 1 - qt[ 6 ];
+    for (int i = 0; i < 5 ; ++i) {
+      for( int j = 0 ; j < 6 ; ++j ) {
+        next_state[j] = qt[j] + load[ qt[6] ][ i ][ j ];
+      }
+      if( valid(next_state) )
+        candidates.push_back( toString(next_state) );
     }
   }
   else
   {
     // Descarrega o barco
-    for (int i = 0; i < 5 ; ++i)
-        next_state[i] = qt[i] + download[ qt[2] ][ i ];
+    for (int i = 0 ; i < 7 ; ++i )
+      next_state[i] = qt[i];
+
+    next_state[ 4*qt[6] ] += next_state[ 2 ];
+    next_state[ 2 ] -= next_state[ 2 ];
+    next_state[ 4*qt[6] + 1 ] += next_state[ 3 ];
+    next_state[ 3 ] -= next_state[ 3 ];
+
     candidates.push_back( toString(next_state) );
   }
   return candidates;
@@ -93,59 +82,73 @@ void find( string &initial, string &finale )
 
   while( !q.empty() )
   {
+    
     string now = q.front(); q.pop();
-    //if( now == finale ) break;
     cout << "Analisando: " << now << endl;    
+    if( now == finale ) break;
     vector<string> candidates = generate_candidates( now );
-    cout << "Gerando candidatos:";    
     for ( auto next : candidates )
     {
-      cout << " |" << next;
-      if( !valid(next) )
+      if( !states.count(next) )
       {
-        cout << " Fail1|";
-        continue;
-      }
-      else if( !states.count(next) )
-      {
-        cout << " Ok|";
         states[next] = now;
         q.push( next );    
       }
-      else
-      {
-        cout << " Fail2|";
-      }
     }
-    cout << endl;
   }
 
   string s = finale;
-  vector<string> print;
-  while( states[s] != s )
+  stack<string> print;
+  do
   {
-    print.push_back( s );
+    print.push( s );
+    s = states[s];
   }
+  while( initial != s );
 
-  for( auto p : print )
-    cout << p << endl;
+  cout << initial;  
+  while( !print.empty() ){
+    cout << " -> " << print.top();
+    print.pop();
+  }
+  cout << endl;
 
 }
 
-void test()
+void testLoad()
 {
-  vector<string> tests;
-  queue<string> q; q.push( "33000" );
+  vector<string> vs;
+  vs.push_back( "3300000" );
+  vs.push_back( "3300001" );
+  vs.push_back( "0000331" );
+  vs.push_back( "0000330" );
 
-  while( q.size() < 100 && !q.empty() )
+  for (int i = 0; i < vs.size() ; ++i)
   {
-    string now = q.front(); q.pop();
-    cout << now << " ->";
-    for( auto c : generate_candidates(now) )
-    {
-      cout << " | " << c;
-      q.push(c);
-    }
+    cout << "Analisando " << vs[i] << ":";
+    for( auto s : generate_candidates( vs[i]) )
+      cout << " " << s;
+    cout << endl;
+  }
+
+}
+
+void testDownload()
+{
+  vector<string> vs;
+  vs.push_back( "2310001" );
+  vs.push_back( "1320001" );
+  vs.push_back( "2211001" );
+
+  vs.push_back( "0010230" );
+  vs.push_back( "0020130" );
+  vs.push_back( "0011220" );
+
+  for (int i = 0; i < vs.size() ; ++i)
+  {
+    cout << "Analisando " << vs[i] << ":";
+    for( auto s : generate_candidates( vs[i]) )
+      cout << " " << s;
     cout << endl;
   }
 
@@ -153,12 +156,12 @@ void test()
 
 int main(int argc, char const *argv[]) {
 
-  string initial_state = "33000" ,finale_state = "00433" ;
+  string initial_state = "3300000" ,finale_state = "0000331" ;
+  
+  find( initial_state, finale_state );
 
-  cout << "Inicio " << endl;
-  //find( initial_state, finale_state );
-  test();
-  cout << "Fim " << endl;
+  //testLoad();
+  //testDownload();
 
   return 0;
 }
