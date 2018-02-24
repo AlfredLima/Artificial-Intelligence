@@ -6,6 +6,7 @@
 
 #include<bits/stdc++.h>
 using namespace std;
+#define DEBUG if(0)
 
 map< string , map< string , double> > table;
 vector< string > lines;
@@ -111,20 +112,77 @@ void init(){
     readFile();
     createNodes();
     createConnections();
+    createLines();
 }
 
-double avaliacao( string from , string target ){
+double rate( string from , string target ){
     return table[from][target]/30.0;
 }
 
 void aStar( string from , string target ){
-    map< string , double > dist;
-    priority_queue< tuple<double,double,string,string> > pq;
+    DEBUG cout << "Chamou! " << lines.size() << endl;
+    map< string , map< string , double > > dist;
+    map< string , map< string , tuple<string,string> > > path;
+    priority_queue< tuple< double , double , string , string , string , string > > pq;
+
     for ( auto l : lines ){
-        pq.push( make_tuple( avaliacao(from,target) , 0 , l , from ) );
+        DEBUG cout << l << " - " << nodes[ from ].edges[l].size() << endl;
+        if( nodes[ from ].edges[l].size() ) {
+            pq.push( make_tuple( rate(from,target) , 0 , l , from, "" , "" ) );
+            path[ from ][ l ] = make_tuple("","");
+        }
     }
+
+    string line_target = "";
+    while ( !pq.empty() ){
+        auto top = pq.top(); pq.pop();
+        double cost_rate = get<0>(top), cost_real = get<1>(top);
+        string line = get<2>(top) , node = get<3>(top);
+        string father = get<4>(top), line_father = get<5>(top);
+
+        cout << "Analisando " << node << " - " << line << " - " << cost_rate << endl;
+
+        if( dist[node].count(line) ) {
+            continue;
+        }
+
+        dist[ node ][ line ] = cost_real;
+        path[ node ][ line ] = make_tuple( father, line_father );
+        if( node == target ){
+            cout << "Encontrei a resposta" << endl;
+            line_target = line;
+            break;
+        }
+
+        // Continuar na mesma linha
+        for ( auto v : nodes[node].edges[line] ) {
+            double cost = cost_real + table[ node ][ v ]/30.0;
+            pq.push( make_tuple( cost + rate(v,target) , cost , line , v , node, line ) );
+        }
+
+        // Mudar de linha
+        for( auto l : lines ){
+            if( l == line ) continue;
+            pq.push( make_tuple( cost_rate + 4 , cost_real + 4 , l , node, node, l ) );
+        }
+    }
+
+    cout << "#################################################" << endl;
+
+    // Caminho até o objetivo
+    string s = target;
+    vector< tuple<string,string> > paths;
+    while ( s != from ){
+        cout << s << " - " << line_target << endl;
+        paths.push_back( make_tuple(s,line_target) );
+        auto t = path[s][line_target];
+        s = get<0>(t); line_target = get<1>(t);
+    }
+
+
 }
 
 int main(){
     init();
+    aStar( "E1", "E3" );
 }
