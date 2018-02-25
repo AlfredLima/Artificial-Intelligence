@@ -123,31 +123,29 @@ void aStar( string from , string target ){
     DEBUG cout << "Chamou! " << lines.size() << endl;
     map< string , map< string , double > > dist;
     map< string , map< string , tuple<string,string> > > path;
-    priority_queue< tuple< double , double , string , string , string , string > > pq;
+    priority_queue< tuple< double , double , string , string > > pq;
 
     for ( auto l : lines ){
-        DEBUG cout << l << " - " << nodes[ from ].edges[l].size() << endl;
         if( nodes[ from ].edges[l].size() ) {
-            pq.push( make_tuple( rate(from,target) , 0 , l , from, "" , "" ) );
+            pq.push( make_tuple( rate(from,target) , 0 , l , from ) );
+            dist[ from ][ l ] = 0;
             path[ from ][ l ] = make_tuple("","");
         }
     }
-
+    double cost_change = 4.0/60.0;
     string line_target = "";
     while ( !pq.empty() ){
         auto top = pq.top(); pq.pop();
         double cost_rate = get<0>(top), cost_real = get<1>(top);
         string line = get<2>(top) , node = get<3>(top);
-        string father = get<4>(top), line_father = get<5>(top);
 
-        cout << "Analisando " << node << " - " << line << " - " << cost_rate << endl;
+        cout << "Analisando " << node << " - " << line << " - " << cost_rate << " - " << cost_real << endl;
 
-        if( dist[node].count(line) ) {
+        if( cost_real > dist[node][line] ) {
+            cout << "Ruim" << endl;
             continue;
         }
 
-        dist[ node ][ line ] = cost_real;
-        path[ node ][ line ] = make_tuple( father, line_father );
         if( node == target ){
             cout << "Encontrei a resposta" << endl;
             line_target = line;
@@ -157,32 +155,45 @@ void aStar( string from , string target ){
         // Continuar na mesma linha
         for ( auto v : nodes[node].edges[line] ) {
             double cost = cost_real + table[ node ][ v ]/30.0;
-            pq.push( make_tuple( cost + rate(v,target) , cost , line , v , node, line ) );
+            if( !dist[v].count(line) or cost < dist[v][line] ) {
+                dist[v][line] = cost;
+                path[v][line] = make_tuple( node , line );
+                pq.push( make_tuple(cost + rate(v, target), cost, line, v) );
+            }
         }
 
         // Mudar de linha
+        cout << "Mudando de linha" << endl;
         for( auto l : lines ){
-            if( l == line ) continue;
-            pq.push( make_tuple( cost_rate + 4 , cost_real + 4 , l , node, node, l ) );
+            if( !nodes[node].edges[l].size() ){
+                cout << l << " não tem caminho" << endl;
+                continue;
+            }
+            cout << l << " tem caminho" << endl;
+            if( !dist[node].count(l) or cost_real + cost_change < dist[node][l]  ) {
+                cout << "\t Entrou! " << cost_real + cost_change << " - " << cost_rate + cost_change << endl;
+                dist[node][l] = cost_real + cost_change;
+                path[node][l] = make_tuple( node, line );
+                pq.push( make_tuple( cost_rate + cost_change , cost_real + cost_change , l , node) );
+            }
         }
     }
 
     cout << "#################################################" << endl;
 
-    // Caminho até o objetivo
     string s = target;
-    vector< tuple<string,string> > paths;
-    while ( s != from ){
+    vector < tuple<string,string> > answer;
+    do {
         cout << s << " - " << line_target << endl;
-        paths.push_back( make_tuple(s,line_target) );
-        auto t = path[s][line_target];
+        answer.push_back( make_tuple(s,line_target) );
+        auto t = path[ s ][ line_target ];
         s = get<0>(t); line_target = get<1>(t);
-    }
+    } while ( s != "" );
 
 
 }
 
 int main(){
     init();
-    aStar( "E1", "E3" );
+    aStar( "E10", "E3" );
 }
