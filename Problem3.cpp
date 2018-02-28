@@ -70,6 +70,14 @@ bool valid( vector<string> &s , int i, int j ){
            table[ s[j-1] ][ s[j] ] && table[ s[j] ][ s[j+1] ];
 }
 
+bool valid( vector<string> &s ){
+
+    for (int i = 1; i < s.size() ; ++i)
+        if( !table[ s[i-1] ][ s[i] ] ) return false;
+
+    return true;
+}
+
 void print( vector<string> &s ){
     for (int i = 0; i < s.size() ; ++i) {
         if( i ) cout << " -> ";
@@ -119,9 +127,32 @@ void generatePath(){
     }
 }
 
+void allAnswer(){
+    // Gerar todas as respostas
+    int min_answer = 1<<20;
+    vector< string > path;
+    for (int i = 1; i < 11; ++i)
+        path.push_back( "C" + to_string(i) );
+    path.push_back("C1");
+
+    do {
+        if( valid(path) ){
+            int t = cost(path);
+            min_answer = min(t,min_answer);
+            cout << "# " << t << " # ";
+            print(path);
+        }
+    } while ( next_permutation( path.begin() + 1 , path.begin() + 10 ) );
+
+    cout << min_answer << endl;
+
+}
+
 int main(int argc, char const *argv[])
 {
     init();
     generatePath();
-	return 0;
+
+    //allAnswer();
+    return 0;
 }
