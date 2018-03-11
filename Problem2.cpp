@@ -149,6 +149,7 @@ void aStar( string from , string target ){
         }
 
         if( node == target ){
+            cout << cost_real*60 << endl;
             DEBUG cout << "Encontrei a resposta" << endl;
             line_target = line;
             break;
@@ -199,7 +200,43 @@ void aStar( string from , string target ){
 
 }
 
+bool checkIn( string station )
+{
+    for (int i = 1; i < 15 ; ++i)
+        if( ("E" + to_string(i)) == station )
+            return true;
+    return false;
+}
+
 int main(){
     init();
-    aStar( "E10", "E3" );
+    string cont = "";
+    string in, out;
+    while( true )
+    {
+        cout << "Deseja continuar? (Y/N)" << endl;
+        cin >> cont;
+        if( cont == "Y" )
+        {
+            cout << "Estação de origem: ";
+            cin >> in;
+            cout << "Estação de destino: ";
+            cin >> out;
+            if( checkIn(in) & checkIn(out) ){
+                aStar( in , out );
+            }
+            else {
+                cout << "Entrada errada" << endl;
+            }
+        }
+        else if( cont == "N" )
+        {
+            cout << "Finalizando o programa." << endl;
+            break;
+        }
+        else
+        {
+            cout << "Entrada errada." << endl;
+        }
+    }
 }
