@@ -25,6 +25,28 @@ void readFile(){
     }
 }
 
+int factorial( int n )
+{
+    int answer = 1;
+    for (int i = 2; i <= n ; ++i)
+        answer *= i;
+    return answer;
+}
+
+vector<string> kthperm( vector<string> S, int k )
+{
+    vector<string> P;
+    while( S.size() )
+    {
+        int f = factorial( S.size() - 1 );
+        int i = k/f;
+        P.push_back( S[i] );
+        k = k%f;
+        S.erase( S.begin() + i );
+    }
+    return P;
+}
+
 void init(){
     readFile();
 }
@@ -38,37 +60,6 @@ double cost( vector<string> way ){
 
 map< string, bool> vstd;
 vector<string> path;
-
-bool answer = false;
-
-void dfs( string f , string t, int d ){
-
-    if( answer ) return;
-
-    if( d == 10 ){
-        if( f == t )
-            answer = true;
-        return;
-    }
-
-    for ( auto v : graph[f] ){
-        if( !vstd[v] ){
-            vstd[v] = true;
-            path.push_back( v );
-            dfs( v , t , d + 1 );
-            if( answer ) return;
-            vstd[v] = false;
-            path.pop_back();
-        }
-    }
-
-}
-
-bool valid( vector<string> &s , int i, int j ){
-    return table[ s[i-1] ][ s[i] ] && table[ s[i] ][ s[i+1] ]
-                                    &&
-           table[ s[j-1] ][ s[j] ] && table[ s[j] ][ s[j+1] ];
-}
 
 bool valid( vector<string> &s ){
 
@@ -86,42 +77,47 @@ void print( vector<string> &s ){
     cout << endl;
 }
 
-void generatePath(){
-
+void generatePath( int life ){
+    srand(time(NULL));
     // Condições iniciais
-    answer = false;
     double min_answer = 1<<20;
-    vector<string> answer_path;
+    vector<string> answer_path, path;
+    vector<string> base;
+    for (int i = 2; i <= 10; ++i)
+        base.push_back( "C" + to_string(i) );
+    int size = factorial( base.size() );
 
-    // Encontrar a primeira resposta
-    path.push_back( "C1" );
-    dfs( "C1" , "C1" , 0 );
-    if( path.size() == 1 ){
-        cout << "Não tem resposta!" << endl;
-    }
-    else {
-        answer_path = path;
-        min_answer = cost(answer_path);
-        cout << "Primeira resposta: " << cost(answer_path) << endl;
-        print(answer_path);
-    }
 
-    // Encontrar respostas melhores
-    for (int k = 0; k < 5; ++k) {
-        path = answer_path;
-        for (int i = 1; i < answer_path.size() - 1; ++i) {
-            for (int j = i + 1; j < answer_path.size() - 1; ++j) {
-                swap(path[i], path[j]);
-                if (valid(path, i, j)) {
-                    double cost_temp = cost(path);
-                    if (cost_temp < min_answer) {
+    for (int k = 0; k < life; ++k)
+    {
+        // Reinicio aleatório
+        do {
+            path = kthperm( base , rand()%size );
+            path.insert( path.begin() , "C1" );
+            path.push_back( "C1" );
+        } while( !valid(path) );
+        int c = cost(path);
+        if( c < min_answer ){
+            answer_path = path;
+            min_answer = c;
+            cout << "Trocou:" << endl;
+            cout << c << " => "; print( answer_path );
+        }
+        // Subida da encosta
+        // Trocando duas posições
+        for (int i = 1; i < 9 ; ++i) {
+            for (int j = i+1; j < 10 ; ++j) {
+                swap( path[i], path[j] );
+                if( valid(path) ){
+                    c = cost(path);
+                    if( c < min_answer ){
                         answer_path = path;
-                        min_answer = cost_temp;
-                        cout << "Trocou: " << min_answer << endl;
-                        print(answer_path);
+                        min_answer = c;
+                        cout << "Trocou subindo:" << endl;
+                        cout << c << " => "; print( answer_path );
                     }
                 }
-                swap(path[i], path[j]);
+                swap( path[i], path[j] );
             }
         }
     }
@@ -142,7 +138,7 @@ void allAnswer(){
             cout << "# " << t << " # ";
             print(path);
         }
-    } while ( next_permutation( path.begin() + 1 , path.begin() + 10 ) );
+    } while ( next_permutation( path.begin()+1 , path.begin() + 10 ) );
 
     cout << min_answer << endl;
 
@@ -151,7 +147,10 @@ void allAnswer(){
 int main(int argc, char const *argv[])
 {
     init();
-    generatePath();
+    cout << "Digite a quantidade de reinicios aleatórios: ";
+    int t;
+    cin >> t;
+    generatePath(t);
 
     //allAnswer();
     return 0;
