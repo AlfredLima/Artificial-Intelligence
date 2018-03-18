@@ -81,7 +81,7 @@ void generatePath( int life ){
     srand(time(NULL));
     // Condições iniciais
     double min_answer = 1<<20;
-    vector<string> answer_path, path;
+    vector<string> answer_path, path, temp_path;
     vector<string> base;
     for (int i = 2; i <= 10; ++i)
         base.push_back( "C" + to_string(i) );
@@ -97,30 +97,51 @@ void generatePath( int life ){
             path.push_back( "C1" );
         } while( !valid(path) );
         int c = cost(path);
+        cout << "--------------######--------------" << endl;
+        cout << "Reinicio: " << c << " => "; print( path );
+        cout << "--------------######--------------" << endl;
         if( c < min_answer ){
             answer_path = path;
             min_answer = c;
-            cout << "Trocou:" << endl;
+            cout << "Trocou no reinicio:" << endl;
             cout << c << " => "; print( answer_path );
         }
         // Subida da encosta
         // Trocando duas posições
-        for (int i = 1; i < 9 ; ++i) {
-            for (int j = i+1; j < 10 ; ++j) {
-                swap( path[i], path[j] );
-                if( valid(path) ){
-                    c = cost(path);
-                    if( c < min_answer ){
-                        answer_path = path;
-                        min_answer = c;
-                        cout << "Trocou subindo:" << endl;
-                        cout << c << " => "; print( answer_path );
+        
+        bool up;
+        temp_path = path;
+        int cost_temp = c;
+        
+        do {
+            up = false;
+            for (int i = 1; i < 9 ; ++i) {
+                for (int j = i+1; j < 10 ; ++j) {
+                    swap( path[i], path[j] );
+                    if( valid(path) ){
+                        c = cost(path);
+                        if( c < cost_temp ){
+                            temp_path = path;
+                            cost_temp = c;
+                            cout << "Trocou subindo:" << endl;
+                            cout << c << " => "; print( temp_path );
+                        }
                     }
+                    swap( path[i], path[j] );
                 }
-                swap( path[i], path[j] );
             }
+        } while( up );
+        if( cost_temp < min_answer ) {
+            answer_path = temp_path;
+            min_answer = cost_temp;
+            cout << "Trocou no topo:" << endl;
+            cout << min_answer << " => "; print( answer_path );
         }
     }
+
+    cout << "--------------######--------------" << endl;
+    cout << "Resposta:" << endl;
+    cout << min_answer << " => "; print( answer_path );
 }
 
 void allAnswer(){
